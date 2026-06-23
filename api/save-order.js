@@ -3,7 +3,6 @@
 // Deploy alongside index.html. Set NOTION_TOKEN in Vercel Environment Variables.
 
 export default async function handler(req, res) {
-  // Only allow POST
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
@@ -22,20 +21,27 @@ export default async function handler(req, res) {
     const payload = {
       parent: { database_id: NOTION_DB },
       properties: {
-        'Order No':      { title:     [{ text: { content: orderData.orderNum || '' } }] },
-        'Name':          { rich_text: [{ text: { content: orderData.name    || '' } }] },
-        'Email':         { email: orderData.email || '' },
-        'Phone':         { rich_text: [{ text: { content: orderData.phone   || '' } }] },
-        'Address':       { rich_text: [{ text: { content: orderData.address || '' } }] },
-        'Items':         { rich_text: [{ text: { content: orderData.items   || '' } }] },
-        'Subtotal':      { number: orderData.subtotal  || 0 },
-        'Promo':         { number: orderData.promoAmt  || 0 },
-        'Total':         { number: orderData.total     || 0 },
-        'Payment':       { rich_text: [{ text: { content: orderData.payment || '' } }] },
-        'Delivery Date': { rich_text: [{ text: { content: orderData.deliveryDate || '' } }] },
-        'Delivery Slot': { rich_text: [{ text: { content: orderData.deliverySlot || '' } }] },
-        'Status':        { select: { name: 'New' } },
-        'Date':          { date: { start: new Date().toISOString().split('T')[0] } },
+        // Title column
+        'Order No.':  { title:     [{ text: { content: orderData.orderNum || '' } }] },
+        // Text columns
+        'Name':       { rich_text: [{ text: { content: orderData.name    || '' } }] },
+        'Phone':      { rich_text: [{ text: { content: orderData.phone   || '' } }] },
+        'Address':    { rich_text: [{ text: { content: orderData.address || '' } }] },
+        'Items':      { rich_text: [{ text: { content: orderData.items   || '' } }] },
+        'Payment':    { rich_text: [{ text: { content: orderData.payment || '' } }] },
+        // Email column
+        'Email':      { email: orderData.email || '' },
+        // Number columns
+        'Order':      { number: orderData.total    || 0 },
+        'Subtotal':   { number: orderData.subtotal || 0 },
+        'Promo':      { number: orderData.promoAmt || 0 },
+        'Total':      { number: orderData.total    || 0 },
+        // Date column
+        'Date':       { date: { start: new Date().toISOString().split('T')[0] } },
+        // Status select
+        'Status':     { select: { name: 'New' } },
+        // Slot — combining delivery date + slot into one field
+        'Slot':       { rich_text: [{ text: { content: (orderData.deliveryDate || '') + (orderData.deliverySlot ? ' · ' + orderData.deliverySlot : '') } }] },
       }
     };
 
@@ -52,7 +58,7 @@ export default async function handler(req, res) {
     const data = await notionRes.json();
 
     if (!notionRes.ok) {
-      console.error('Notion API error:', data);
+      console.error('Notion API error:', JSON.stringify(data));
       return res.status(502).json({ error: 'Notion API error', details: data });
     }
 
